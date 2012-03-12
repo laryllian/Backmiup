@@ -1,0 +1,424 @@
+.TH backmiup 1  "January, 2011" "Version 0.976" "USER COMMANDS"
+.SH NAME
+BackMiUp \- Easy incremental snapshot\-like backups, local or remote using the built\-in ssh support
+.SH SYNOPSIS
+.B backmiup
+\-c FILE [\-b | \-t | \-m | \-u | \-j (on|off)] [\-v]
+.br
+.B backmiup 
+\-s DIR \-d DIR [\-k KEYFILE \-u USERNAME \-e SERVERNAME] [\-b | \-t | \-m | \-u | \-j (on|off) | \-x NAME] [\-v] [-p PORT] [\-l SIZE]
+.br
+.B backmiup 
+(\-y | \-h) [\-v)
+.SH DESCRIPTION
+This little program produces incremental backups of a specified folder within another given folder. It creates time\-labeled snapshots and makes it therefore easy to find and recover old versions of files and deleted ones. The focus however, lies in the built\-in encrypted network transfer support using SSH, which lets you do secure backups via Internet from wherever you might be. Due to the genial delta-transfer algorithm (thanks to the rsync team) only the parts of your data that have changed are transferred. Furthermore, connection losses and occasional short uptimes of the computer do not matter, since the backup process is always automatically resumed later on. All backups appear as full backups, but only changed files are really stored in new backups, unchanged files are hard linked.
+.PP
+.B Naming
+.PP
+Now you might anticipate, what the name stands for. Well:
+.IP B 
+BackMiUp
+.IP A
+actively
+.IP C 
+connects to
+.IP K 
+key-secured
+.IP M 
+media and
+.IP I 
+incrementally
+.IP U 
+updates
+.IP P
+philoentities
+.PP
+Not all made backups are kept, backmiup keeps hourly backups the last 24 hours, daily backups the last month and weekly backups from further in the past. For undo-functionality, backups less that one hour old are all kept.
+.PP
+For using this program you must provide a backup configuration (which folder should be backupped to where) and a mode of operation (like "doing a backup" or "mounting a backup volume" or "testing the settings"). The configuration can be passed via a config file or even directly on the command line. The mode on the other hand must be given on the command line, not chosing a mode defaults to doing a backup. The order does not matter, enjoy.
+.PP
+.B To do local backups
+.IP o 
+Chose the folder to backup, probably your home directory "~" (this is the "\-s" argument)
+.IP o
+Create a backup directory somewhere on your internal or external disk (this is the "\-d" argument)
+.PP
+.B To do remote backups
+.TP
+On your computer
+.IP o
+Create a ssh keypair on your computer (useful information on how to do that can easily be found online).
+.IP o
+Chose the folder to backup, probably "~" (this is the "\-s" argument)
+.TP
+On the server
+.IP o
+Install and activate an ssh server, (hint: turn off password authentication for sshd if you don't need it)
+.IP o
+Create an unprivileged user on the server (this is the "\-u" argument)
+.IP o
+Create a backup directory in this user's homedir (this is the "\-d" argument)
+.IP o
+Add your public key to the "~/.ssh/authorized_keys" file on the server, you might have to create this file
+.IP o
+Get your server address, this can be an IP address, host name, dyndns.org address... whatever works(this is the "\-e" argument)
+.PP
+.B Backups in general
+.IP o
+If you wish, you can always limit the total backup size using the "\-l" option
+.IP o
+You might also use the "\-j on/off" mode for automatically backing up every hour
+.PP
+.B Recovering files
+.IP o
+For local backups: just copy the files you need
+.IP o
+For remote backups: use the "\-m" or "\-n" option to mount your backup read\-only and copy the files you need
+.PP
+.B Encrypted backups
+.IP o
+If you wish, you can use ecryptfs on the server to create an encrypted "Private" folder in the users home directory, which can then be used as backup target. But be aware that the maximum file name length is shorter in ecryptfs that in eg. ext4, so know what you are doing; rsync might fail due to those restrictions.
+.br
+.SH OPTIONS
+.SS Arguments
+Using a config file
+.TP
+.B -c FILE, --config-file FILE
+Read arguments and options from FILE
+.PP
+Using command line arguments
+.TP
+.B -s DIR, --source DIR
+The source directory, this is the folder that will be backed up, trailing slashes and spaces don't matter
+.TP
+.B -d DIR, --destination DIR
+The destination dir, this is the folder where the backup will be placed in, trailing slashes don't matter but spaces are not allowed
+.TP
+.B -k KEYFILE, --keyfile KEYFILE
+The file containing the private key for logging into the ssh server hosting the backups
+.TP
+.B -u USERNAME, --username	USERNAME
+The username to use to log into the backup server
+.TP
+.B -e SERVERADDRESS, --server SERVERADDRESS
+The server to connect to, this can be an IP address, a host name, a dyndns.org address. whatever works to reach the server.
+.SS Options
+.TP
+.B -l SIZE, --size-limit SIZE
+Enforce total backup size limit, old backups are deleted to meet this limit, but the most recent backup will never be touched. SIZE can be given as a number optionally followed by a multiplier e.g. 398MB. Valid are KB, MB, GB, TB and PT, whereas plain numbers are interpreted as KB (1024 bytes).
+.TP
+.B -p PORT, --ssh-port PORT
+Use a custom port for the SSH connection, the default is 22.
+.TP
+.B -v, --verbose
+Shows more information of what is being done. Rsync shows a summary of the transfer at the end.
+.TP
+.B -vv, --vverbose
+Shows detailed information of what is being done. Exclude patterns are shown and rsync displays each transfered file.
+.SS Modes of operation
+.TP
+.B -b, --backup
+Make a backup, this is the default mode if nothing is specified
+.TP
+.B -q, --stop-backup
+Stop a given running backup (once).
+.TP
+.B -m, --mount-backup
+Mount the given remote backup into a temp folder in the user's dir to access/recover backed up files
+.TP
+.B -n, --unmount-backup
+Unmount the given remote backup (if mounted)
+.TP
+.B -t, --test-settings
+Test if the given folders/server is/are reachable, furthermore test if the ssh settings are valid, if we have write permission in the destination folder and if the size limit settings are appropriate
+.TP
+.B -j, --cronjob (on|off)
+Create/remove a cronjob that backs up the given source directory every hour
+.TP
+.B -x FILENAME, --export-settings FILENAME
+Export the given command line arguments into a config file with the provided name. If the name is a "-", output goes to stdout.
+.SS No-argument modes
+.TP
+.B -h, --help
+Show the help page
+.TP
+.B -y, --test-system
+Extended test if all needed programs are installed to access full functionality, a basic one is automatically performed prior to every operation.
+.SH EXCLUDING FILES
+Backmiup accepts system-wide exclude patterns and per-user exclude patterns. They should be placed in /usr/lib/backmiup/exclude.list or $HOME/.backmiup/exclude.list respectively. Those lists are passed on to rsync, therefore please refer to the rsync manual chapter FILTER RULES for detailed information on how to use them. In -vv mode, these patterns are printed out prior to the execution of backmiup.
+.SH EXAMPLES
+Introducing the fictional character Chris, who wants to use this programm:
+.TP
+Make a manual local backup of Chris' homedir to /media/BackupDisk/myBackup, the \-b can be omitted
+.PP 
+.RS 
+\f(CW\fB backmiup\fP \-s /home/chris \-d /media/BackupDisk/myBackup -b \fP
+.RE
+.PP 
+Create a cronjob to do the backup of Chris' homedir from example above, but the whole backup folder should - if possible - not be larger than 100GB
+.PP 
+.RS 
+\f(CW\fB backmiup\fP \-s /home/chris \-d /media/BackupDisk/myBackup -l 104857600 -j on \fP
+.RE
+.PP 
+Make a manual remote backup of Chris' homedir to chrisbackup@mypersonalserver.dyndns.org/mnt/hugeStorage/myBackup
+.PP 
+.RS 
+\f(CW\fB backmiup\fP \-s /home/chris \-d /mnt/hugeStorage/myBackup -e mypersonalserver.dyndns.org -u chrisbackup -k /home/chris/.ssh/backupkey_for_chris \fP
+.RE
+.PP 
+Export the settings of the remote backup configuration given above and then create a cronjob to do it every hour
+.PP 
+.RS 
+\f(CW\fB backmiup\fP \-s /home/chris \-d /mnt/hugeStorage/myBackup -e mypersonalserver.dyndns.org -u chrisbackup -k /home/chris/.ssh/backupkey_for_chris \-x my_backmiup_config_file.conf \fP
+.PP
+\f(CW\fB backmiup\fP \-c my_backmiup_config_file.conf \-j on \fP
+.RE
+.PP 
+Mount a remote backup volume defined by a config file
+.PP 
+.RS 
+\f(CW\fB backmiup\fP \-c my_backmiup_config_file.conf \-m \fP
+.RE
+.PP 
+Unmount a remote backup volume defined by a config file
+.PP 
+.RS 
+\f(CW\fB backmiup\fP \-c my_backmiup_config_file.conf \-n \fP
+.RE
+.PP 
+Check the settings of a given config file
+.PP 
+.RS 
+\f(CW\fB backmiup\fP \-c my_backmiup_config_file.conf \-t \fP
+.RE
+.PP 
+Mount a remote backup volume (the example above) using command line arguments
+.PP 
+.RS 
+\f(CW\fB backmiup\fP \-s /home/chris \-d /mnt/hugeStorage/myBackup -e mypersonalserver.dyndns.org -u chrisbackup -k /home/chris/.ssh/backupkey_for_chris \-m \fP
+.RE
+.PP 
+You can also find an example config file here: /usr/share/doc/backmiup/backmiup-example.conf.
+
+.SH EXIT STATUS
+backmiup exits with zero, if it succeeds to do, what the mode switch told it to do. Non zero is returned in special cases, errors or warnings. Note that 40-46 are warnings.
+.TP
+1
+Happens with the -j option if no "on" or "off" is given, this exit code means "is not a job"; otherwise 0 is returned
+.TP
+2
+SSH error, the ssh return code can be found in the backup's status file (see below)
+.TP
+3
+SSHFS error, the sshfs return code can be found in the backup's status file (see below)
+.TP
+4
+RSYNC error, the rsync return code can be found in the backup's status file (see below)
+.TP
+5
+Renaming, linking or cleaning failed
+.TP
+6
+Cronjob could not be added
+.TP
+7
+Cronjob could not be removed
+.TP
+8
+Backing up stopped by user
+.TP
+10-33
+Argument error (details follow below)
+.TP
+40
+Backup too large, according to limit (can be understood as warning)
+.TP
+41
+Maximum backup size setting too large for disk (can be understood as warning)
+.TP
+42
+Backup server is not reachable (can be understood as warning)
+.TP
+43
+Backup medium is not present (can be understood as warning)
+.TP
+44
+Backup volume is already mounted (can be understood as warning)
+.TP
+45
+Backup volume has not been mounted (can be understood as warning)
+.TP
+46
+Backup of the given source to the given destination still in progress (can be understood as warning)
+.TP
+50
+Permission error, cannot read, write or acces the destination directory
+.TP
+70
+Required basic programm not accesible, backups can not be made.
+.TP
+71
+Additional programm not accesible, backups can be made, but cronjobs and remote mounting are not supported on this machine.
+.TP
+72
+The log directory ~/.backmiup is not accessible or could not be created.
+.TP
+73
+This backup is not running.
+.TP
+74
+Backup could not be stopped.
+
+
+.PP
+.B Detailed argument error codes
+.TP
+10
+Config file AND conflicting command line options given
+.TP
+11
+Command line option was already defined
+.TP
+12
+Argumentless modes \"-y/--test-system\" or \"-g/--generate-keys\" AND arguments found
+.TP
+13
+The size limit was neither a number or a number followed by a multiplier (eg. 234MB)
+.TP
+14
+The config file is not readable
+.TP
+15
+The config file is not a config file (it is not even a normal file)
+.TP
+16
+The config file for export cannot be created in this location
+.TP
+17
+The config file has the wrong format
+.TP
+18
+No name for exporting specified
+.TP
+19
+A config file with the given name already exists
+.TP
+20
+No arguments provided
+.TP
+21
+Unknown command
+.TP
+22
+Source directory does not exist or is not readable
+.TP
+23
+Remote destination directory must not be relative
+.TP
+24
+Destination directory does not exist or is not writable
+.TP
+25
+Destination directory does not exist on server
+.TP
+26
+Source or destination not set
+.TP
+27
+Destination not set
+.TP
+28
+The destination contains spaces
+.TP
+29
+Key file, user name or server name missing
+.TP
+30
+The key file does not exist or is not readable
+.TP
+31
+The file is not a valid ssh public key file
+.TP
+32
+Not necessary to mount/unmount a local backup, please use your favorite file explorer and go the backup directory manually
+.TP
+33
+Source and destination are the same directory
+.TP
+34
+Destination directory is a subdirectory of the source directory
+.TP
+35
+Given ssh port is invalid, it is not a number between 1 and 65535"
+
+.SH GUI Programming
+This application has been written with a clear distinction of program and potential graphical user interface in mind. All functions can easily be run by an independend GUI, even mounting is not blocking while being mounted. To get more information on backups that have been run, backmiup creates pid files and status files in ~/.backmiup/ For each back up configuration a pid file is generated upon start and updated accordingly when finished. This file contains PID and after completion or error the return code. Once a backup is successfully finished, a statusfile is generated as well containing details of the backup itself (size, latest backup etc). The name is just the concatenation of source, server details and destination directories stripped of strange characters where slashes become underscores. For exact generation details, please consult the script itself and search for "HASH".
+.PP 
+.B Statusfile
+.PP 
+In a status file the following info can be found (illustrated by an example):
+.PP 
+.RS 
+SOURCE="/home/chris/stuff"
+.br
+DESTINATION="/mnt/Backup"
+.br
+BACKUP_SIZE="182964"
+.br
+DISK_SIZE="214165720"
+.br
+SPACE_LEFT="5948120"
+.br
+OLDEST_BACKUP="2009-04-23_10-12-20"
+.br
+LATEST_BACKUP="2010-04-19_04-44-35"
+.br
+SNAPSHOTS=5"
+.br
+SSH_SERVER="backup.chrisserver.dyndns.org"
+.RE
+.PP
+.B Pid file
+.PP 
+In a pid file the following info can be found (illustrated by an example):
+.PP 
+.RS
+PID="23048"
+.br
+SOURCE="/home/chris/stuff"
+.br
+DESTINATION="/mnt/Backup"
+.br
+EXECUTION_STARTED="2010-05-21_18:39:41"
+.br
+IN_CRONTAB="false"
+.br
+PID_RSYNC=1337
+.br
+EXECUTION_ENDED="2010-05-21_19:19:42"
+.br
+RC="0"
+.br
+EXT_RC="0"
+.RE
+.PP
+I hope this makes it easy for the passionate GUI programmer =).
+.SH WINDOWS AND CYGWIN
+This programm only uses bash, ssh and rsync functionality which are all available on Windows using Cygwin. The only difference - the usage of the ping command - is being taken care of so that backmiup can also be used on Windows.
+.SH Mac OS X
+Some minor modifications have to be done, but I have one running on Mac OS 10.4. You might have to update rsync to Version 3.
+.SH DEBUGGING
+Normally backmiup only prints a short summary to stdout after having finished a backup, all other modes are quiet. Errors are always printed to stderr. If you want to see what is being done, use the -v or -vv flag.
+.SH AUTHOR
+Rainer (backmiup@laryllian.de)
+.br
+I'm always happy about comments and suggestions.
+.SH LICENSE
+CC-GNU GPL Rainer
+.SH SEE ALSO
+rsync(1)
+.br
+ssh(1)
+.br
+ecryptfs(1)
