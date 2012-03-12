@@ -1,0 +1,15 @@
+SYNOPSIS
+       backmiup -c FILE [-b | -t | -m | -u | -j (on|off)] [-v]
+       backmiup  -s  DIR  -d  DIR [-k KEYFILE -u USERNAME -e SERVERNAME] [-b | -t | -m | -u | -j (on|off) | -x
+       NAME] [-v] [-p PORT] [-l SIZE]
+       backmiup (-y | -h) [-v)
+
+DESCRIPTION
+       This little program produces incremental backups of a specified folder within another given folder.  It
+       creates  time-labeled  snapshots  and makes it therefore easy to find and recover old versions of files
+       and deleted ones. The focus however, lies in the built-in encrypted network transfer support using SSH,
+       which  lets  you  do  secure  backups via Internet from wherever you might be. Due to the genial delta-
+       transfer algorithm (thanks to the rsync team) only the parts of your data that have changed are  trans‐
+       ferred.  Furthermore,  connection  losses  and  occasional short uptimes of the computer do not matter,
+       since the backup process is always automatically resumed later on. All backups appear as full  backups,
+       but only changed files are really stored in new backups, unchanged files are hard linked.
