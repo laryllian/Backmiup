@@ -1,3 +1,5 @@
+STILL BETA
+
 SYNOPSIS
        backmiup -c FILE [-b | -t | -m | -u | -j (on|off)] [-v]
        backmiup  -s  DIR  -d  DIR [-k KEYFILE -u USERNAME -e SERVERNAME] [-b | -t | -m | -u | -j (on|off) | -x
@@ -13,3 +15,7 @@ DESCRIPTION
        ferred.  Furthermore,  connection  losses  and  occasional short uptimes of the computer do not matter,
        since the backup process is always automatically resumed later on. All backups appear as full  backups,
        but only changed files are really stored in new backups, unchanged files are hard linked.
+
+TODO
+- periodically clean logs
+- the deletion times dont work correctly yet
